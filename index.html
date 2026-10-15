@@ -413,7 +413,6 @@
       conn = peer.connect(code);
       isMultiplayer = true;
 
-      // FIXED: When connection successfully opens on the join side, switch screens immediately!
       conn.on('open', () => {
         setupConnectionListeners();
         joinSetup.style.display = 'none';
@@ -460,13 +459,19 @@
       const cellIndex = this.getAttribute('data-index');
 
       if (options[cellIndex] !== "" || !running) return;
+      
+      // In multiplayer, check your assigned symbol. In local play, anyone can tap.
       if (isMultiplayer && currentPlayer !== myAssignedSymbol) return;
 
       playSound('click');
-      executeMove(cellIndex, myAssignedSymbol);
+      
+      // Use currentPlayer for local play, or myAssignedSymbol for online play
+      const symbolToPlay = isMultiplayer ? myAssignedSymbol : currentPlayer;
+      
+      executeMove(cellIndex, symbolToPlay);
 
       if (isMultiplayer && conn) {
-        conn.send({ type: 'move', index: cellIndex, player: myAssignedSymbol });
+        conn.send({ type: 'move', index: cellIndex, player: symbolToPlay });
       }
     }
 
