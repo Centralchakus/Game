@@ -237,7 +237,7 @@
     <!-- MENU SCREEN -->
     <div id="menu-screen">
       <button class="menu-btn" onclick="startLocalPlay()">Play Locally (Same Device)</button>
-      <button class="menu-btn" onclick="showMultiplayerSetup()">Play Online via Code (Anywhere)</button>
+      <button class="menu-btn" onclick="showMultiplayerSetup()">Play Online (Room Code)</button>
     </div>
 
     <!-- MULTIPLAYER SETUP SCREEN -->
@@ -312,7 +312,7 @@
     ];
 
     let options = ["", "", "", "", "", "", "", "", ""];
-    let moveHistory = []; // Track player moves order
+    let moveHistory = [];
     let currentPlayer = "X";
     let running = true;
     let scores = { X: 0, 0: 0, ties: 0 };
@@ -460,7 +460,7 @@
 
     function executeMove(index, playerSymbol) {
       options[index] = playerSymbol;
-      moveHistory.push(playerSymbol); // Record player who made move
+      moveHistory.push(playerSymbol);
       const cell = cells[index];
       cell.textContent = playerSymbol;
       cell.classList.add('taken');
@@ -509,7 +509,7 @@
         scores[currentPlayer]++;
         updateScoreboard();
 
-        // The LOSER starts next round
+        // Loser starts next round
         const nextStartPlayer = (currentPlayer === "X") ? "0" : "X";
 
         setTimeout(() => {
@@ -523,7 +523,7 @@
         scores.ties++;
         updateScoreboard();
 
-        // On DRAW: The player who made the 2nd to last move (8th move) starts next
+        // On draw: Second-to-last player starts next
         const nextStartPlayer = moveHistory[moveHistory.length - 2];
 
         setTimeout(() => {
