@@ -413,6 +413,7 @@
       conn = peer.connect(code);
       isMultiplayer = true;
 
+      // FIXED: When connection successfully opens on the join side, switch screens immediately!
       conn.on('open', () => {
         setupConnectionListeners();
         joinSetup.style.display = 'none';
@@ -525,7 +526,6 @@
         scores[currentPlayer]++;
         updateScoreboard();
 
-        // Loser starts next round
         const nextStartPlayer = (currentPlayer === "X") ? "0" : "X";
 
         setTimeout(() => {
@@ -539,7 +539,6 @@
         scores.ties++;
         updateScoreboard();
 
-        // On draw: Second-to-last player starts next
         const nextStartPlayer = moveHistory[moveHistory.length - 2];
 
         setTimeout(() => {
