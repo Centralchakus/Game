@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>X and 0 by Chakus</title>
-  <!-- PeerJS for global online code connection -->
+  <!-- PeerJS for global online connection -->
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
   <style>
     * {
@@ -66,7 +66,8 @@
       background-color: #0369a1;
     }
 
-    #multiplayer-setup {
+    /* HOST / JOIN PANELS */
+    .setup-panel {
       display: none;
       margin-top: 15px;
       text-align: left;
@@ -75,14 +76,14 @@
       border-radius: 12px;
       border: 1px solid #334155;
     }
-    #multiplayer-setup label {
+    .setup-panel label {
       color: #94a3b8;
       font-size: 0.85rem;
       font-weight: bold;
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
     }
-    #multiplayer-setup input {
+    .setup-panel input {
       width: 100%;
       padding: 10px;
       background: #0f172a;
@@ -90,19 +91,19 @@
       color: #f8fafc;
       border-radius: 8px;
       font-size: 1rem;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       text-align: center;
       letter-spacing: 2px;
     }
     .room-code-display {
       background: #0f172a;
       color: #38bdf8;
-      padding: 10px;
+      padding: 12px;
       border-radius: 8px;
       font-size: 1.2rem;
       font-weight: bold;
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       border: 1px dashed #475569;
       user-select: all;
     }
@@ -237,23 +238,25 @@
     <!-- MENU SCREEN -->
     <div id="menu-screen">
       <button class="menu-btn" onclick="startLocalPlay()">Play Locally (Same Device)</button>
-      <button class="menu-btn" onclick="showMultiplayerSetup()">Play Online (Room Code)</button>
+      <button class="menu-btn" onclick="showHostScreen()">Host Game (Generate Code)</button>
+      <button class="menu-btn" onclick="showJoinScreen()">Join Game (Enter Code)</button>
     </div>
 
-    <!-- MULTIPLAYER SETUP SCREEN -->
-    <div id="multiplayer-setup">
-      <div id="host-section">
-        <label>Your Room Code:</label>
-        <div class="room-code-display" id="my-peer-id">Generating...</div>
-        <button class="menu-btn" onclick="copyCode()" style="margin-bottom:10px; width:100%;">Copy Room Code</button>
-      </div>
-      
-      <div id="join-section" style="margin-top: 10px;">
-        <label for="peer-id-input">Enter Partner's Room Code:</label>
-        <input type="text" id="peer-id-input" placeholder="Paste code here..." />
-        <button class="menu-btn" onclick="connectToPeer()" style="width:100%;">Connect & Play</button>
-      </div>
-      <button class="secondary menu-btn" onclick="backToMenu()" style="width:100%; margin-top:10px;">Back</button>
+    <!-- HOST SETUP SCREEN (PLAYER X) -->
+    <div id="host-setup" class="setup-panel">
+      <label>Your Room Code (Player X):</label>
+      <div class="room-code-display" id="my-peer-id">Generating Code...</div>
+      <button class="menu-btn" onclick="copyCode()" style="margin-bottom:10px; width:100%;">Copy Code</button>
+      <p style="color: #94a3b8; font-size: 0.8rem; text-align: center; margin: 5px 0 10px 0;">Share this code with your partner.</p>
+      <button class="secondary menu-btn" onclick="backToMenu()" style="width:100%;">Back</button>
+    </div>
+
+    <!-- JOIN SETUP SCREEN (PLAYER 0) -->
+    <div id="join-setup" class="setup-panel">
+      <label for="peer-id-input">Enter Partner's Code (Player 0):</label>
+      <input type="text" id="peer-id-input" placeholder="Paste room code here..." />
+      <button class="menu-btn" onclick="connectToHost()" style="width:100%; margin-bottom:10px;">Connect & Join Room</button>
+      <button class="secondary menu-btn" onclick="backToMenu()" style="width:100%;">Back</button>
     </div>
 
     <!-- GAME SCREEN -->
@@ -300,7 +303,8 @@
     const scoreTieEl = document.querySelector('#scoreTie');
 
     const menuScreen = document.querySelector('#menu-screen');
-    const multiplayerSetup = document.querySelector('#multiplayer-setup');
+    const hostSetup = document.querySelector('#host-setup');
+    const joinSetup = document.querySelector('#join-setup');
     const gameScreen = document.querySelector('#game-screen');
     const myPeerIdDisplay = document.querySelector('#my-peer-id');
     const peerIdInput = document.querySelector('#peer-id-input');
@@ -322,7 +326,7 @@
     let conn = null;
     let myAssignedSymbol = "X";
 
-    // Sound Synthesizer
+    // Audio Synthesizer
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playSound(type) {
       if (!audioCtx) return;
@@ -363,9 +367,11 @@
       resetGame(true);
     }
 
-    function showMultiplayerSetup() {
+    // HOST (GENERATE CODE - PLAYER X)
+    function showHostScreen() {
       menuScreen.style.display = 'none';
-      multiplayerSetup.style.display = 'block';
+      hostSetup.style.display = 'block';
+      myAssignedSymbol = "X";
 
       if (!peer) {
         const randomId = 'chakus-' + Math.floor(1000 + Math.random() * 9000);
@@ -378,16 +384,26 @@
         peer.on('connection', (connection) => {
           conn = connection;
           isMultiplayer = true;
-          myAssignedSymbol = "X";
           setupConnectionListeners();
-          multiplayerSetup.style.display = 'none';
+          hostSetup.style.display = 'none';
           gameScreen.style.display = 'block';
           resetGame(true);
         });
       }
     }
 
-    function connectToPeer() {
+    // JOIN (SEARCH CODE - PLAYER 0)
+    function showJoinScreen() {
+      menuScreen.style.display = 'none';
+      joinSetup.style.display = 'block';
+      myAssignedSymbol = "0";
+
+      if (!peer) {
+        peer = new Peer();
+      }
+    }
+
+    function connectToHost() {
       const code = peerIdInput.value.trim();
       if (!code) {
         alert('Please enter a valid room code.');
@@ -396,11 +412,10 @@
 
       conn = peer.connect(code);
       isMultiplayer = true;
-      myAssignedSymbol = "0";
 
       conn.on('open', () => {
         setupConnectionListeners();
-        multiplayerSetup.style.display = 'none';
+        joinSetup.style.display = 'none';
         gameScreen.style.display = 'block';
         resetGame(true);
       });
@@ -409,7 +424,7 @@
     function setupConnectionListeners() {
       conn.on('data', (data) => {
         if (data.type === 'move') {
-          handleRemoteMove(data.index);
+          handleRemoteMove(data.index, data.player);
         } else if (data.type === 'reset') {
           resetGame(false, data.nextPlayer);
         }
@@ -427,7 +442,8 @@
       peer = null;
       conn = null;
       gameScreen.style.display = 'none';
-      multiplayerSetup.style.display = 'none';
+      hostSetup.style.display = 'none';
+      joinSetup.style.display = 'none';
       menuScreen.style.display = 'flex';
     }
 
@@ -446,16 +462,16 @@
       if (isMultiplayer && currentPlayer !== myAssignedSymbol) return;
 
       playSound('click');
-      executeMove(cellIndex, currentPlayer);
+      executeMove(cellIndex, myAssignedSymbol);
 
       if (isMultiplayer && conn) {
-        conn.send({ type: 'move', index: cellIndex });
+        conn.send({ type: 'move', index: cellIndex, player: myAssignedSymbol });
       }
     }
 
-    function handleRemoteMove(index) {
+    function handleRemoteMove(index, playerSymbol) {
       playSound('click');
-      executeMove(index, currentPlayer);
+      executeMove(index, playerSymbol);
     }
 
     function executeMove(index, playerSymbol) {
